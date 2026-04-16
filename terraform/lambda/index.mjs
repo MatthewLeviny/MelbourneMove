@@ -1,4 +1,4 @@
-import { AmplifyClient, UpdateAppCommand, GetAppCommand } from "@aws-sdk/client-amplify";
+import { AmplifyClient, UpdateAppCommand, GetAppCommand, DeleteBranchCommand } from "@aws-sdk/client-amplify";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 const amplify = new AmplifyClient({ region: process.env.AWS_REGION_NAME });
@@ -6,6 +6,7 @@ const sns = new SNSClient({ region: process.env.AWS_REGION_NAME });
 
 export async function handler(event) {
   const appId = process.env.AMPLIFY_APP_ID;
+  const branchName = process.env.BRANCH_NAME || "main";
   const snsTopicArn = process.env.SNS_TOPIC_ARN;
 
   // Check if this is the 100% threshold (actual overage)
@@ -18,17 +19,19 @@ export async function handler(event) {
   try {
     await amplify.send(new GetAppCommand({ appId }));
 
+    // Disable auto-build so branch doesn't redeploy when reconnected
     await amplify.send(
       new UpdateAppCommand({
         appId,
         enableBranchAutoBuild: false,
-        customRules: [
-          {
-            source: "/<*>",
-            target: "/index.html",
-            status: "503",
-          },
-        ],
+      })
+    );
+
+    // Delete the branch to stop serving traffic entirely
+    await amplify.send(
+      new DeleteBranchCommand({
+        appId,
+        branchName,
       })
     );
 
@@ -43,12 +46,13 @@ export async function handler(event) {
           "",
           `Time: ${new Date().toISOString()}`,
           "",
-          "To re-enable:",
-          "1. Go to AWS Amplify Console",
-          "2. Remove the 503 custom rule",
-          "3. Re-enable auto branch builds",
+          "The 'main' branch has been deleted to stop serving traffic.",
           "",
-          "Or run: terraform apply (after checking your billing)",
+          "To re-enable:",
+          "1. Go to Amplify Console → Hosting → Branches",
+          "2. Click 'Connect branch' and select 'main'",
+          "3. App settings → General → re-enable auto branch builds",
+          "4. Trigger a new deployment",
         ].join("\n"),
       })
     );

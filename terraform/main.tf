@@ -100,6 +100,8 @@ resource "aws_iam_role_policy" "kill_switch" {
         Effect = "Allow"
         Action = [
           "amplify:UpdateApp",
+          "amplify:UpdateBranch",
+          "amplify:DeleteBranch",
           "amplify:StopJob",
           "amplify:ListJobs",
           "amplify:GetApp"
