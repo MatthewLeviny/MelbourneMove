@@ -277,8 +277,22 @@ export default function TrainMap() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    let interval = setInterval(fetchData, POLL_INTERVAL_MS);
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        fetchData();
+        interval = setInterval(fetchData, POLL_INTERVAL_MS);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchData]);
 
   const metroGeojson = toGeoJSON(metroVehicles);

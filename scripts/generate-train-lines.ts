@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 const GTFS_URL = "https://data.ptv.vic.gov.au/downloads/gtfs.zip";
 const TEMP_DIR = join(process.cwd(), ".gtfs-temp");
@@ -178,7 +178,7 @@ async function main() {
   const allTripLookup: Record<string, TripEndpoints> = {};
 
   console.log("Downloading GTFS static feed...");
-  execSync(`curl -sL -o "${zipPath}" "${GTFS_URL}"`);
+  execFileSync("curl", ["-sL", "-o", zipPath, GTFS_URL]);
 
   for (const feed of FEEDS) {
     console.log(`\nProcessing ${feed.name} (folder ${feed.folder})...`);
@@ -186,16 +186,14 @@ async function main() {
     const innerZip = join(TEMP_DIR, feed.folder, "google_transit.zip");
     const extractDir = join(TEMP_DIR, feed.name.toLowerCase().replace("/", ""));
 
-    execSync(
-      `unzip -o "${zipPath}" "${feed.folder}/google_transit.zip" -d "${TEMP_DIR}"`,
-      { stdio: "pipe" }
-    );
+    execFileSync("unzip", ["-o", zipPath, `${feed.folder}/google_transit.zip`, "-d", TEMP_DIR], {
+      stdio: "pipe",
+    });
 
     mkdirSync(extractDir, { recursive: true });
-    execSync(
-      `unzip -o "${innerZip}" routes.txt trips.txt shapes.txt stops.txt stop_times.txt -d "${extractDir}"`,
-      { stdio: "pipe" }
-    );
+    execFileSync("unzip", ["-o", innerZip, "routes.txt", "trips.txt", "shapes.txt", "stops.txt", "stop_times.txt", "-d", extractDir], {
+      stdio: "pipe",
+    });
 
     const { geojson, routeNames, tripLookup } = processGtfs(extractDir, feed.filterCoach ?? false);
     const json = JSON.stringify(geojson);

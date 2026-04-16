@@ -121,7 +121,7 @@ resource "aws_iam_role_policy" "kill_switch" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:*:*:*"
+        Resource = "arn:aws:logs:${var.aws_region}:*:log-group:/aws/lambda/melbournemove-kill-switch:*"
       },
       {
         Effect = "Allow"

@@ -55,7 +55,14 @@ export async function fetchVehiclePositions(
   );
 
   const vehicles: VehiclePosition[] = feed.entity
-    .filter((entity) => entity.vehicle?.position)
+    .filter((entity) => {
+      const pos = entity.vehicle?.position;
+      if (!pos) return false;
+      // Validate coordinates are within reasonable bounds
+      if (isNaN(pos.latitude) || isNaN(pos.longitude)) return false;
+      if (Math.abs(pos.latitude) > 90 || Math.abs(pos.longitude) > 180) return false;
+      return true;
+    })
     .map((entity) => {
       const v = entity.vehicle!;
       const pos = v.position!;
