@@ -1,6 +1,14 @@
 terraform {
   required_version = ">= 1.0"
 
+  backend "s3" {
+    bucket         = "melbournemove-tfstate"
+    key            = "infra/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "melbournemove-tflock"
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
