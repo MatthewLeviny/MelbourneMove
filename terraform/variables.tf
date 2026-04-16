@@ -17,7 +17,7 @@ variable "amplify_branch_name" {
 variable "budget_limit" {
   description = "Monthly budget limit in USD that triggers the kill switch"
   type        = string
-  default     = "1.0"
+  default     = "0.65"
 }
 
 variable "aws_region" {

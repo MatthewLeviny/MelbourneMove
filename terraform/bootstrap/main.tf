@@ -11,6 +11,14 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "MelbourneMove"
+      ManagedBy   = "Terraform"
+      Environment = "production"
+    }
+  }
 }
 
 variable "aws_region" {
