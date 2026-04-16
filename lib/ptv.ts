@@ -1,7 +1,6 @@
 import GtfsRealtimeBindings from "gtfs-realtime-bindings";
-import { readFileSync } from "fs";
-import { join } from "path";
 import type { VehiclePosition } from "@/types/vehicle";
+import tripEndpointsData from "@/data/trip-endpoints.json";
 
 export type TransportMode = "metro" | "vline" | "tram";
 
@@ -14,21 +13,10 @@ const VEHICLE_POSITIONS_URLS: Record<TransportMode, string> = {
     "https://api.opendata.transport.vic.gov.au/opendata/public-transport/gtfs/realtime/v1/tram/vehicle-positions",
 };
 
-// Load trip endpoints lookup once on server startup
-let tripEndpoints: Record<string, { origin: string; destination: string }> | null = null;
-
-function getTripEndpoints() {
-  if (!tripEndpoints) {
-    try {
-      const filePath = join(process.cwd(), "data", "trip-endpoints.json");
-      tripEndpoints = JSON.parse(readFileSync(filePath, "utf-8"));
-    } catch {
-      console.warn("trip-endpoints.json not found, origin/destination will be unavailable");
-      tripEndpoints = {};
-    }
-  }
-  return tripEndpoints!;
-}
+const tripEndpoints = tripEndpointsData as Record<
+  string,
+  { origin: string; destination: string }
+>;
 
 const cache = new Map<
   TransportMode,
@@ -66,15 +54,13 @@ export async function fetchVehiclePositions(
     new Uint8Array(buffer)
   );
 
-  const endpoints = getTripEndpoints();
-
   const vehicles: VehiclePosition[] = feed.entity
     .filter((entity) => entity.vehicle?.position)
     .map((entity) => {
       const v = entity.vehicle!;
       const pos = v.position!;
       const tripId = v.trip?.tripId ?? "";
-      const ep = endpoints[tripId];
+      const ep = tripEndpoints[tripId];
       return {
         id: entity.id,
         latitude: pos.latitude,
