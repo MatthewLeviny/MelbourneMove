@@ -9,6 +9,7 @@ import Map, {
   type MapLayerMouseEvent,
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { FeatureCollection } from "geojson";
 import type { VehiclePosition, VehiclesResponse } from "@/types/vehicle";
 import TrainPopup from "./TrainPopup";
 import StatusBar from "./StatusBar";
@@ -19,7 +20,7 @@ const MAP_STYLE =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 const POLL_INTERVAL_MS = 30_000;
 
-function toGeoJSON(vehicles: VehiclePosition[]): GeoJSON.FeatureCollection {
+function toGeoJSON(vehicles: VehiclePosition[]): FeatureCollection {
   return {
     type: "FeatureCollection",
     features: vehicles.map((v) => ({
@@ -211,11 +212,11 @@ export default function TrainMap() {
   const [selectedVehicle, setSelectedVehicle] =
     useState<VehiclePosition | null>(null);
   const [trainLines, setTrainLines] =
-    useState<GeoJSON.FeatureCollection | null>(null);
+    useState<FeatureCollection | null>(null);
   const [vlineLines, setVlineLines] =
-    useState<GeoJSON.FeatureCollection | null>(null);
+    useState<FeatureCollection | null>(null);
   const [tramLines, setTramLines] =
-    useState<GeoJSON.FeatureCollection | null>(null);
+    useState<FeatureCollection | null>(null);
   const [routeNames, setRouteNames] = useState<
     Record<string, { name: string; color: string }>
   >({});
@@ -276,7 +277,9 @@ export default function TrainMap() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    // Kick off the first fetch on the next tick rather than synchronously,
+    // so the resulting state updates happen outside the effect's setup phase.
+    const initialFetch = setTimeout(fetchData, 0);
     let interval = setInterval(fetchData, POLL_INTERVAL_MS);
 
     const handleVisibility = () => {
@@ -290,6 +293,7 @@ export default function TrainMap() {
 
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
+      clearTimeout(initialFetch);
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
