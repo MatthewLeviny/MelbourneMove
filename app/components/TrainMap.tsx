@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, {
   Layer,
   NavigationControl,
@@ -303,11 +303,14 @@ export default function TrainMap() {
   const vlineGeojson = toGeoJSON(vlineVehicles);
   const tramGeojson = toGeoJSON(tramVehicles);
 
-  const allVehicles = [
-    ...(layers.trains ? metroVehicles : []),
-    ...(layers.vline ? vlineVehicles : []),
-    ...(layers.trams ? tramVehicles : []),
-  ];
+  const allVehicles = useMemo(
+    () => [
+      ...(layers.trains ? metroVehicles : []),
+      ...(layers.vline ? vlineVehicles : []),
+      ...(layers.trams ? tramVehicles : []),
+    ],
+    [layers, metroVehicles, vlineVehicles, tramVehicles]
+  );
 
   const handleClick = useCallback(
     (e: MapLayerMouseEvent) => {
